@@ -6,38 +6,41 @@ import CountryComponent from '@/components/country-component';
 import Layout from '@/components/layout';
 import PlatformComponent from '@/components/platform-component';
 
+const componentList = [
+  { id: 1, item: <CountryComponent /> },
+  { id: 2, item: <PlatformComponent /> },
+  { id: 3, item: <CategoryComponent /> },
+];
+
 const HomePage = () => {
-  const countryRef = useRef<HTMLDivElement>(null);
-  const platformRef = useRef<HTMLDivElement>(null);
-  const categoryRef = useRef<HTMLDivElement>(null);
-
   const [componentId, setComponentId] = useState<number>(1);
+  const componentRef = useRef<Map<number, HTMLDivElement> | null>(null);
 
-  const componentList = [
-    {
-      id: 1,
-      ref: countryRef,
-    },
-    {
-      id: 2,
-      ref: platformRef,
-    },
-    {
-      id: 3,
-      ref: categoryRef,
-    },
-  ];
+  const getMap = () => {
+    if (!componentRef.current) {
+      componentRef.current = new Map<number, HTMLDivElement>();
+    }
+    return componentRef.current;
+  };
 
   const scrollToId = (itemId: number) => {
-    const component = componentList.find((item) => item.id === itemId);
-    if (!component) {
+    const map = getMap();
+    const item = map.get(itemId);
+    if (!item) {
       return;
     }
-
-    component.ref.current?.scrollIntoView({ behavior: 'smooth' });
+    item.scrollIntoView({ behavior: 'smooth' });
   };
 
   const onClickNext = () => {
+    const currentComponent = componentList.find(
+      (component) => component.id === componentId,
+    );
+
+    if (!currentComponent) {
+      return;
+    }
+
     setComponentId((prevState) => {
       if (componentList.length > componentId) {
         return prevState + 1;
@@ -53,9 +56,23 @@ const HomePage = () => {
   return (
     <Layout>
       <div className='w-full px-20 bg-white relative'>
-        <CountryComponent ref={countryRef} />
-        <PlatformComponent ref={platformRef} componentId={componentId} />
-        <CategoryComponent ref={categoryRef} componentId={componentId} />
+        {componentList.map((component) => (
+          <div
+            key={component.id}
+            ref={(node) => {
+              const map = getMap();
+              if (node) {
+                map.set(component.id, node);
+              } else {
+                map.delete(component.id);
+              }
+            }}
+            className={`${component.id > componentId && 'hidden'}`}
+          >
+            {' '}
+            {component.item}
+          </div>
+        ))}
       </div>
       <div className='fixed bottom-10 right-20 space-x-4'>
         <Button type='button' className='w-80' onClick={onClickNext}>
